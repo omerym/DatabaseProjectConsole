@@ -6,7 +6,6 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             string connection = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=FlightSystem;Integrated Security=True;Connect Timeout=30;Encrypt=False;";
-            DatabaseHandler.InsertAdmin(connection, "Bob");
             var admins = DatabaseHandler.ReadTable(connection, "Admin");
             foreach (var admin in admins)
             {
