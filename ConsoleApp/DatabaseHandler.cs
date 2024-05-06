@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -42,6 +43,16 @@ namespace ConsoleApp
             connection.Open();
             command.ExecuteNonQuery();
 
+        }
+        public static void DeleteCustomer(string connectionString, string condition,string value) 
+        {
+            using SqlConnection connection = new(connectionString);
+            string queryString = "Delete from Customer where @condition=@value";
+            SqlCommand command = new SqlCommand(queryString, connection);
+            command.Parameters.AddWithValue("@condition", condition);
+            command.Parameters.AddWithValue("@value", value);
+            connection.Open();
+            command.ExecuteNonQuery();
         }
         public static IEnumerable<string[]> ReadTable(string connectionString, string tableName)
         {
