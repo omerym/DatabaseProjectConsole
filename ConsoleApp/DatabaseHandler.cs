@@ -9,6 +9,22 @@ namespace ConsoleApp
 {
     public static class DatabaseHandler
     {
+        public static void DeleteInfant(string connectionString, int infantId)
+        {
+            try
+            {
+                using SqlConnection connection = new SqlConnection(connectionString);
+                string queryString = "DELETE FROM Infant WHERE InfantId = @infantId;";
+                SqlCommand command = new SqlCommand(queryString, connection);
+                command.Parameters.AddWithValue("@infantId", infantId);
+                connection.Open();
+                command.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"error {ex.Message}");
+            }
+        }
         public static void InsertInfant(string connectionString,string name,int companionId,DateTime birthDate,string fnum)
         {
             using SqlConnection connection = new(connectionString);
