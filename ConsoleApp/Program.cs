@@ -7,12 +7,8 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             string connection = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=FlightSystem;Integrated Security=True;Connect Timeout=30;Encrypt=False;";
-
-
-            DatabaseHandler.DeleteInfant(connection, 1);
-
-
-            var infants = DatabaseHandler.ReadTable(connection, "Infant");
+            var infants = DatabaseHandler.ReadTable(connection, "Flight");
+            DatabaseHandler.ChangeFlightTakeOffDateByFnum(connection, DateTime.Now, "fv34");
             foreach (var infant in infants)
             {
                 for (int i = 0; i < infant.Length; i++)
