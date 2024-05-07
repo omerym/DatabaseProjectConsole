@@ -98,6 +98,22 @@ namespace ConsoleApp
                 yield return values;
             }
         }
+        public static IEnumerable<Tuple<string>> GetFlights(string connectionString, DateTime firstDate,DateTime secondDate,string destination,string source) 
+        {
+            using SqlConnection connection = new(connectionString);
+            string queryString = "SELECT Fnum From Flight where Destination=@destination AND TakeOff=@source AND TakeOffDate between @firstDate AND @secondDate";
+            SqlCommand command = new(queryString, connection);
+            command.Parameters.AddWithValue("@destination", destination);
+            command.Parameters.AddWithValue("@source", source);
+            command.Parameters.AddWithValue("@firstDate", firstDate);
+            command.Parameters.AddWithValue("@secondDate", secondDate);
+            connection.Open();
+            using SqlDataReader reader = command.ExecuteReader();
+            while (reader.Read()) 
+            {
+                yield return new(reader.GetString(0));
+            }
+        }
         public static IEnumerable<Tuple<int,string,string,string>> ReadCustomers(string connectionString)
         {
             using SqlConnection connection = new(connectionString);
