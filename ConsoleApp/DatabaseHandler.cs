@@ -45,7 +45,6 @@ namespace ConsoleApp
         public void ChangeFlightTakeOffDateByFnum(DateTime newTime, string fnum)
         {
             EnsureConnection();
-            using SqlConnection connection = new(connectionString);
             string queryString = "Update Flight Set TakeOffDate = @newTime where Fnum = @fnum";
             SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@fnum", fnum);
@@ -92,6 +91,11 @@ namespace ConsoleApp
         public void DeleteFlightsByDate(DateTime date)
         {
             EnsureConnection();
+            string query = "Delete from Flight where TakeOffDate < @date";
+            SqlCommand command = new(query, connection);
+            command.Parameters.AddWithValue("@date", date);
+            command.ExecuteNonQuery();
+
         }
         public void DeleteCustomerById(int Id)
         {
@@ -111,6 +115,30 @@ namespace ConsoleApp
         }
         #endregion
         #region Select
+        public Flight GetFlightByFnum(string fnum)
+        {
+            EnsureConnection();
+            string queryString = $"SELECT * FROM Flight WHERE Fnum = @fnum;";
+            SqlCommand command = new(queryString, connection);
+            command.Parameters.AddWithValue("@fnum", fnum);
+            using SqlDataReader reader = command.ExecuteReader();
+            reader.Read();
+            int? aircraftId = reader.IsDBNull(5) ? null : reader.GetInt32(5);
+            int? creatorId = reader.IsDBNull(6) ? null : reader.GetInt32(6);
+            return new Flight(reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetDateTime(3), reader.GetDateTime(4), aircraftId, creatorId);
+        }
+        public Customer GetCustomerById(int Id)
+        {
+            EnsureConnection();
+            string queryString = $"SELECT * FROM Customer WHERE ID = @Id;";
+            SqlCommand command = new(queryString, connection);
+            command.Parameters.AddWithValue("@Id", Id);
+            using SqlDataReader reader = command.ExecuteReader();
+            reader.Read();
+            string passport = reader.IsDBNull(2) ? "" : reader.GetString(2);
+            string nationality = reader.IsDBNull(3) ? "" : reader.GetString(3);
+            return new Customer(reader.GetInt32(0), reader.GetString(1), passport,nationality);
+        }
         public IEnumerable<string[]> ReadTable(string tableName)
         {
             EnsureConnection();
@@ -139,14 +167,16 @@ namespace ConsoleApp
             using SqlDataReader reader = command.ExecuteReader();
             while (reader.Read()) 
             {
+                int? aircraftId = reader.IsDBNull(5) ? null : reader.GetInt32(5);
+                int? creatorId = reader.IsDBNull(6) ? null : reader.GetInt32(6);
                 yield return new(
                     reader.GetString(0),
                     reader.GetString(1),
                     reader.GetString(2),
                     reader.GetDateTime(3),
                     reader.GetDateTime(4),
-                    reader.GetInt32(5),
-                    reader.GetInt32(6));
+                    aircraftId,
+                    creatorId);
             }
         }
         public IEnumerable<Customer> ReadCustomers()
@@ -157,7 +187,9 @@ namespace ConsoleApp
             using SqlDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
-                yield return new(reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetString(3));
+                string passport = reader.IsDBNull(2) ? "" : reader.GetString(2);
+                string nationality = reader.IsDBNull(3) ? "" : reader.GetString(3);
+                yield return new(reader.GetInt32(0), reader.GetString(1), passport, nationality);
             }
         }
         #endregion
