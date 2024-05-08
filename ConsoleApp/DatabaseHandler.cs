@@ -13,7 +13,7 @@ namespace ConsoleApp
     {
         //class Atributes
         private readonly string connectionString;
-        SqlConnection connection;
+        private SqlConnection connection;
         private bool disposedValue;
 
         public DatabaseHandler(string _connectionString)
@@ -110,10 +110,10 @@ namespace ConsoleApp
                 yield return values;
             }
         }
-        public IEnumerable<Tuple<string>> GetFlights(DateTime firstDate,DateTime secondDate,string destination,string source)
+        public IEnumerable<Flight> GetFlights(DateTime firstDate,DateTime secondDate,string destination,string source)
         {
             EnsureConnection();
-            string queryString = "SELECT Fnum From Flight where Destination=@destination AND TakeOff=@source AND TakeOffDate between @firstDate AND @secondDate";
+            string queryString = "SELECT * From Flight where Destination=@destination AND TakeOff=@source AND TakeOffDate between @firstDate AND @secondDate";
             SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@destination", destination);
             command.Parameters.AddWithValue("@source", source);
@@ -122,10 +122,17 @@ namespace ConsoleApp
             using SqlDataReader reader = command.ExecuteReader();
             while (reader.Read()) 
             {
-                yield return new(reader.GetString(0));
+                yield return new(
+                    reader.GetString(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetDateTime(3),
+                    reader.GetDateTime(4),
+                    reader.GetInt32(5),
+                    reader.GetInt32(6));
             }
         }
-        public IEnumerable<Tuple<int,string,string,string>> ReadCustomers()
+        public IEnumerable<Customer> ReadCustomers()
         {
             EnsureConnection();
             string queryString = "SELECT * FROM Customer;";

@@ -53,12 +53,9 @@ namespace ConsoleApp
         {
             string connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=FlightSystem;Integrated Security=True;Connect Timeout=30;Encrypt=false;";
             using DatabaseHandler dbHandler = new(connectionString);
-            foreach (string[] item in dbHandler.ReadTable("Admin"))
+            foreach (var item in dbHandler.GetFlights(DateTime.Parse("10/2/1999"),DateTime.Parse("10/3/2040"),"krt","cai"))
             {
-                foreach (string val in item)
-                {
-                    WriteLine(val);
-                }
+                Console.WriteLine(item);
             }
         }
     }
