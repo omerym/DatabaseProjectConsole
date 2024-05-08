@@ -51,23 +51,15 @@ namespace ConsoleApp
 
         static void Main(string[] args)
         {
-            //the start of the program 
-            Console.WriteLine("Welcome to flight system\n");
-            string input;
-            do
+            string connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=FlightSystem;Integrated Security=True;Connect Timeout=30;Encrypt=false;";
+            using DatabaseHandler dbHandler = new(connectionString);
+            foreach (string[] item in dbHandler.ReadTable("Admin"))
             {
-                input = Console.ReadLine();//user command
-                HandelCmmand(input);
-            } while (input != "exit");
-
-            string connection = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=Airplane_comm_DP;Integrated Security=True;Connect Timeout=30;Encrypt=false;";
-            DatabaseHandler.SetConnectionString(connection);
-            DatabaseHandler.SetConnectionString(connection);
-            DatabaseHandler.InsertAdmin("omar");
-            DatabaseHandler.InsertAdmin("mahmoud");
-            DatabaseHandler.InsertAdmin("person");
-            DatabaseHandler.ColseConnection();
-            
+                foreach (string val in item)
+                {
+                    WriteLine(val);
+                }
+            }
         }
     }
 }

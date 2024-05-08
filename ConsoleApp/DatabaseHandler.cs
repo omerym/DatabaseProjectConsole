@@ -9,76 +9,56 @@ using System.Threading.Tasks;
 
 namespace ConsoleApp
 {
-    public static class DatabaseHandler
-    {   
+    public class DatabaseHandler : IDisposable
+    {
         //class Atributes
-        static private string connectionString  = null;
-        static SqlConnection connection = null;
+        private readonly string connectionString;
+        SqlConnection connection;
+        private bool disposedValue;
 
-        //SetConnectionString - function to open the connection
-        public static void SetConnectionString(string connectionString)
+        public DatabaseHandler(string _connectionString)
         {
-            if (DatabaseHandler.connectionString == null)
+            connectionString = _connectionString;
+            connection = new SqlConnection(connectionString);
+        }
+        private void EnsureConnection()
+        {
+            connection ??= new SqlConnection(connectionString);
+            if (connection.State != ConnectionState.Open)
             {
-                try
-                {
-                    DatabaseHandler.connectionString = connectionString;
-                    connection = new SqlConnection(connectionString);
-                    connection.Open();
-                    Console.WriteLine("Connection start succefuly\n");
-                }
-                catch (SqlException ex)
-                {
-                    Console.WriteLine("Connection Error\n");
-                }
-            }
-            else
-            {
-                Console.WriteLine("Connection is already running ");
+                connection.Open();
             }
         }
-
-        // ColseConnection -  function to close the conection
-        public static void ColseConnection()
+        public void ChangeCustomerNameById(string newName,int id)
         {
-            if (connection != null && connection.State == ConnectionState.Open)
-            {
-                connection.Close();
-                Console.WriteLine("Connection closed\n");
-            }
-            else
-            {
-                Console.WriteLine("NO connection\n");
-            }
-        }
-
-
-        public static void ChangeCustomerNameById(string newName,int id)
-        {
+            EnsureConnection();
             string queryString = "Update Customer Set Name = @Name where ID = @Id";
-            SqlCommand command = new SqlCommand(queryString, connection);
+            SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@Id", id);
             command.Parameters.AddWithValue("@Name", newName);
             command.ExecuteNonQuery();
         }
-        public static void ChangeFlightTakeOffDateByFnum(DateTime newTime, string fnum)
+        public void ChangeFlightTakeOffDateByFnum(DateTime newTime, string fnum)
         {
-            using SqlConnection connection = new SqlConnection(connectionString);
+            EnsureConnection();
+            using SqlConnection connection = new(connectionString);
             string queryString = "Update Flight Set TakeOffDate = @newTime where Fnum = @fnum";
-            SqlCommand command = new SqlCommand(queryString, connection);
+            SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@fnum", fnum);
             command.Parameters.AddWithValue("@newTime", newTime);
             command.ExecuteNonQuery();
         }
-        public static void DeleteAircraftById(int id)
+        public void DeleteAircraftById(int id)
         {
+            EnsureConnection();
             string queryString = "DELETE FROM Aircraft WHERE ID = @Id;";
-            SqlCommand command = new SqlCommand(queryString, connection);
+            SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@Id", id);
             command.ExecuteNonQuery();
         }
-        public static void InsertInfant(string name,int companionId,DateTime birthDate,string fnum)
+        public void InsertInfant(string name,int companionId,DateTime birthDate,string fnum)
         {
+            EnsureConnection();
             string queryString = "Insert Into Infant values(@name,@companionId,@birthDate,@fnum);";
             SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@name", name);
@@ -87,8 +67,9 @@ namespace ConsoleApp
             command.Parameters.AddWithValue("@fnum", fnum);
             command.ExecuteNonQuery();
         }
-        public static void InsertCustomer(string name,string passport, string nationality)
+        public void InsertCustomer(string name,string passport, string nationality)
         {
+            EnsureConnection();
             string queryString = "Insert Into Customer values(@name,@passport,@nationality);";
             SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@name", name);
@@ -96,27 +77,28 @@ namespace ConsoleApp
             command.Parameters.AddWithValue("@nationality", nationality);
             command.ExecuteNonQuery();
         }
-        public static void InsertAdmin(string name)
+        public void InsertAdmin(string name)
         {
+            EnsureConnection();
             string queryString = "Insert Into Admin values(@name);";
             SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@name", name);
             command.ExecuteNonQuery();
         }
 
-        public static void DeleteCustomerById(int Id) 
+        public void DeleteCustomerById(int Id)
         {
-            
+            EnsureConnection();
             string queryString = "Delete from Customer where ID=@Id";
             SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@Id", Id);
             command.ExecuteNonQuery();
         }
-        public static IEnumerable<string[]> ReadTable(string tableName)
+        public IEnumerable<string[]> ReadTable(string tableName)
         {
+            EnsureConnection();
             string queryString = $"SELECT * FROM {tableName};";
             SqlCommand command = new(queryString, connection);
- 
             using SqlDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -128,8 +110,9 @@ namespace ConsoleApp
                 yield return values;
             }
         }
-        public static IEnumerable<Tuple<string>> GetFlights(DateTime firstDate,DateTime secondDate,string destination,string source) 
+        public IEnumerable<Tuple<string>> GetFlights(DateTime firstDate,DateTime secondDate,string destination,string source)
         {
+            EnsureConnection();
             string queryString = "SELECT Fnum From Flight where Destination=@destination AND TakeOff=@source AND TakeOffDate between @firstDate AND @secondDate";
             SqlCommand command = new(queryString, connection);
             command.Parameters.AddWithValue("@destination", destination);
@@ -142,8 +125,9 @@ namespace ConsoleApp
                 yield return new(reader.GetString(0));
             }
         }
-        public static IEnumerable<Tuple<int,string,string,string>> ReadCustomers()
+        public IEnumerable<Tuple<int,string,string,string>> ReadCustomers()
         {
+            EnsureConnection();
             string queryString = "SELECT * FROM Customer;";
             SqlCommand command = new(queryString, connection);
             using SqlDataReader reader = command.ExecuteReader();
@@ -151,6 +135,25 @@ namespace ConsoleApp
             {
                 yield return new(reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetString(3));
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    connection.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
