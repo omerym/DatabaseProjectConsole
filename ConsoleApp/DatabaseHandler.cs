@@ -21,6 +21,9 @@ namespace ConsoleApp
             connectionString = _connectionString;
             connection = new SqlConnection(connectionString);
         }
+        /// <summary>
+        /// Ensure connection to database. To be called before using connection field.
+        /// </summary>
         private void EnsureConnection()
         {
             connection ??= new SqlConnection(connectionString);
@@ -82,6 +85,14 @@ namespace ConsoleApp
         }
         #endregion
         #region Delete
+        /// <summary>
+        /// Deletes all flights before a given date.
+        /// </summary>
+        /// <param name="date"></param>
+        public void DeleteFlightsByDate(DateTime date)
+        {
+            EnsureConnection();
+        }
         public void DeleteCustomerById(int Id)
         {
             EnsureConnection();
