@@ -194,6 +194,8 @@ namespace ConsoleApp
                     input = 1;
                     WriteLine("Invalid Input");
                 }
+                WriteLine();
+                WriteLine();
             }
         }
     }
