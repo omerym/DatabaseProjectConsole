@@ -29,6 +29,7 @@ namespace ConsoleApp
                 connection.Open();
             }
         }
+        #region Update
         public void ChangeCustomerNameById(string newName,int id)
         {
             EnsureConnection();
@@ -48,14 +49,8 @@ namespace ConsoleApp
             command.Parameters.AddWithValue("@newTime", newTime);
             command.ExecuteNonQuery();
         }
-        public void DeleteAircraftById(int id)
-        {
-            EnsureConnection();
-            string queryString = "DELETE FROM Aircraft WHERE ID = @Id;";
-            SqlCommand command = new(queryString, connection);
-            command.Parameters.AddWithValue("@Id", id);
-            command.ExecuteNonQuery();
-        }
+        #endregion
+        #region Insert
         public void InsertInfant(string name,int companionId,DateTime birthDate,string fnum)
         {
             EnsureConnection();
@@ -85,7 +80,8 @@ namespace ConsoleApp
             command.Parameters.AddWithValue("@name", name);
             command.ExecuteNonQuery();
         }
-
+        #endregion
+        #region Delete
         public void DeleteCustomerById(int Id)
         {
             EnsureConnection();
@@ -94,6 +90,16 @@ namespace ConsoleApp
             command.Parameters.AddWithValue("@Id", Id);
             command.ExecuteNonQuery();
         }
+        public void DeleteAircraftById(int id)
+        {
+            EnsureConnection();
+            string queryString = "DELETE FROM Aircraft WHERE ID = @Id;";
+            SqlCommand command = new(queryString, connection);
+            command.Parameters.AddWithValue("@Id", id);
+            command.ExecuteNonQuery();
+        }
+        #endregion
+        #region Select
         public IEnumerable<string[]> ReadTable(string tableName)
         {
             EnsureConnection();
@@ -143,7 +149,7 @@ namespace ConsoleApp
                 yield return new(reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetString(3));
             }
         }
-
+        #endregion
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
