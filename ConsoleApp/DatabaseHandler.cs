@@ -173,7 +173,16 @@ namespace ConsoleApp
                 $"TakeOffDate between '{firstDate}' AND '{secondDate}'";
             return GetReaderFromQuery(queryString);
         }
-
+        /// <summary>
+        /// Gets flights before a date
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns>SqlDataReader for flights</returns>
+        public SqlDataReader GetFlightsReader(DateTime date)
+        {
+            string queryString = $"SELECT * From Flight where  TakeOffDate < '{date}'";
+            return GetReaderFromQuery(queryString);
+        }
         /// <summary>
         /// Gets flights between two dates
         /// </summary>
@@ -185,7 +194,26 @@ namespace ConsoleApp
         public IEnumerable<Flight> GetFlights(DateTime firstDate, DateTime secondDate, string destination, string source)
         {
             using SqlDataReader reader = GetFlightsReader(firstDate, secondDate, destination, source);
-            return GetFlights(reader);
+            foreach (var flight in GetFlights(reader))
+            {
+                yield return flight;
+            }
+        }
+
+
+
+        /// <summary>
+        /// Gets flights before a date
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
+        public IEnumerable<Flight> GetFlights(DateTime date)
+        {
+            using SqlDataReader reader = GetFlightsReader(date);
+            foreach (var flight in GetFlights(reader))
+            {
+                yield return flight;
+            }
         }
         /// <summary>
         /// Reads flights from an SqlDataReader

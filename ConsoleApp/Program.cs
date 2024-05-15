@@ -12,7 +12,6 @@ namespace ConsoleApp
             string connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=FlightSystem;Integrated Security=True;Connect Timeout=30;Encrypt=false;";
             using DatabaseHandler dbHandler = new(connectionString);
             int input = 1;
-            WriteLine(dbHandler.GetCustomerById(2));
             while (input != 0)
             {
                 WriteLine("Enter Input for:");
