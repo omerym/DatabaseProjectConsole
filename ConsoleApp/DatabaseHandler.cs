@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,7 +34,7 @@ namespace ConsoleApp
             }
         }
         #region Update
-        public void ChangeCustomerNameById(string newName,int id)
+        public void ChangeCustomerNameById(string newName, int id)
         {
             EnsureConnection();
             string queryString = "Update Customer Set Name = @Name where ID = @Id";
@@ -53,7 +54,7 @@ namespace ConsoleApp
         }
         #endregion
         #region Insert
-        public void InsertInfant(string name,int companionId,DateTime birthDate,string fnum)
+        public void InsertInfant(string name, int companionId, DateTime birthDate, string fnum)
         {
             EnsureConnection();
             string queryString = "Insert Into Infant values(@name,@companionId,@birthDate,@fnum);";
@@ -64,7 +65,7 @@ namespace ConsoleApp
             command.Parameters.AddWithValue("@fnum", fnum);
             command.ExecuteNonQuery();
         }
-        public void InsertCustomer(string name,string passport, string nationality)
+        public void InsertCustomer(string name, string passport, string nationality)
         {
             EnsureConnection();
             string queryString = "Insert Into Customer values(@name,@passport,@nationality);";
@@ -117,11 +118,8 @@ namespace ConsoleApp
         #region Select
         public Flight GetFlightByFnum(string fnum)
         {
-            EnsureConnection();
-            string queryString = $"SELECT * FROM Flight WHERE Fnum = @fnum;";
-            SqlCommand command = new(queryString, connection);
-            command.Parameters.AddWithValue("@fnum", fnum);
-            using SqlDataReader reader = command.ExecuteReader();
+            string queryString = $"SELECT * FROM Flight WHERE Fnum = '{fnum}';";
+            using SqlDataReader reader = GetReaderFromQuery(queryString);
             reader.Read();
             int? aircraftId = reader.IsDBNull(5) ? null : reader.GetInt32(5);
             int? creatorId = reader.IsDBNull(6) ? null : reader.GetInt32(6);
@@ -129,22 +127,27 @@ namespace ConsoleApp
         }
         public Customer GetCustomerById(int Id)
         {
-            EnsureConnection();
-            string queryString = $"SELECT * FROM Customer WHERE ID = @Id;";
-            SqlCommand command = new(queryString, connection);
-            command.Parameters.AddWithValue("@Id", Id);
-            using SqlDataReader reader = command.ExecuteReader();
+            string queryString = $"SELECT * FROM Customer WHERE ID = {Id};";
+            using SqlDataReader reader = GetReaderFromQuery(queryString);
             reader.Read();
             string passport = reader.IsDBNull(2) ? "" : reader.GetString(2);
             string nationality = reader.IsDBNull(3) ? "" : reader.GetString(3);
-            return new Customer(reader.GetInt32(0), reader.GetString(1), passport,nationality);
+            return new Customer(reader.GetInt32(0), reader.GetString(1), passport, nationality);
+        }
+        public SqlDataReader GetReaderFromQuery(string query)
+        {
+            EnsureConnection();
+            SqlCommand command = new(query, connection);
+            return command.ExecuteReader();
+        }
+        public SqlDataReader GetTableReader(string tableName, string columns = "*")
+        {
+            string queryString = $"SELECT {columns} FROM {tableName};";
+            return GetReaderFromQuery(queryString);
         }
         public IEnumerable<string[]> ReadTable(string tableName)
         {
-            EnsureConnection();
-            string queryString = $"SELECT * FROM {tableName};";
-            SqlCommand command = new(queryString, connection);
-            using SqlDataReader reader = command.ExecuteReader();
+            using SqlDataReader reader = GetTableReader(tableName);
             while (reader.Read())
             {
                 string[] values = new string[reader.FieldCount];
@@ -155,25 +158,51 @@ namespace ConsoleApp
                 yield return values;
             }
         }
-        public IEnumerable<Flight> GetFlights(DateTime firstDate,DateTime secondDate,string destination,string source)
+        /// <summary>
+        /// Gets flights between two dates
+        /// </summary>
+        /// <param name="firstDate"></param>
+        /// <param name="secondDate"></param>
+        /// <param name="destination"></param>
+        /// <param name="source"></param>
+        /// <returns>SqlDataReader for flights</returns>
+        public SqlDataReader GetFlightsReader(DateTime firstDate, DateTime secondDate, string destination, string source)
         {
-            EnsureConnection();
-            string queryString = "SELECT * From Flight where Destination=@destination AND TakeOff=@source AND TakeOffDate between @firstDate AND @secondDate";
-            SqlCommand command = new(queryString, connection);
-            command.Parameters.AddWithValue("@destination", destination);
-            command.Parameters.AddWithValue("@source", source);
-            command.Parameters.AddWithValue("@firstDate", firstDate);
-            command.Parameters.AddWithValue("@secondDate", secondDate);
-            using SqlDataReader reader = command.ExecuteReader();
-            while (reader.Read()) 
+            string queryString = $"SELECT * From Flight where Destination='{destination}'" +
+                $" AND TakeOff='{source}' AND " +
+                $"TakeOffDate between '{firstDate}' AND '{secondDate}'";
+            return GetReaderFromQuery(queryString);
+        }
+
+        /// <summary>
+        /// Gets flights between two dates
+        /// </summary>
+        /// <param name="firstDate"></param>
+        /// <param name="secondDate"></param>
+        /// <param name="destination"></param>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public IEnumerable<Flight> GetFlights(DateTime firstDate, DateTime secondDate, string destination, string source)
+        {
+            using SqlDataReader reader = GetFlightsReader(firstDate, secondDate, destination, source);
+            return GetFlights(reader);
+        }
+        /// <summary>
+        /// Reads flights from an SqlDataReader
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        public static IEnumerable<Flight> GetFlights(SqlDataReader reader)
+        {
+            while (reader.Read())
             {
                 int? aircraftId = reader.IsDBNull(5) ? null : reader.GetInt32(5);
                 int? creatorId = reader.IsDBNull(6) ? null : reader.GetInt32(6);
                 yield return new(
-                    reader.GetString(0),
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetDateTime(3),
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetDateTime(3),
                     reader.GetDateTime(4),
                     aircraftId,
                     creatorId);
@@ -181,10 +210,7 @@ namespace ConsoleApp
         }
         public IEnumerable<Customer> ReadCustomers()
         {
-            EnsureConnection();
-            string queryString = "SELECT * FROM Customer;";
-            SqlCommand command = new(queryString, connection);
-            using SqlDataReader reader = command.ExecuteReader();
+            using SqlDataReader reader = GetTableReader("Customer");
             while (reader.Read())
             {
                 string passport = reader.IsDBNull(2) ? "" : reader.GetString(2);
