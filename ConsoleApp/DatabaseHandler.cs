@@ -164,6 +164,26 @@ namespace ConsoleApp
         {
             return GetReaderFromQuery(reportQuery);
         }
+        public SqlDataReader GetBookingFlightReader()
+        {
+            string query = @"SELECT Booking.CustomerId, Booking.FNum,Booking.Class,
+                            Flight.Destination,Flight.Takeoff,Flight.TakeoffDate
+                            from Booking Inner Join Flight on Booking.FNum = Flight.FNum;";
+            return GetReaderFromQuery(query);
+        }
+        public IEnumerable<string[]> ReadBookingFlight()
+        {
+            using SqlDataReader reader = GetBookingFlightReader();
+            while (reader.Read())
+            {
+                string[] values = new string[reader.FieldCount];
+                for (int i = 0; i < values.Length; i++)
+                {
+                    values[i] = reader[i].ToString() ?? "";
+                }
+                yield return values;
+            }
+        }
         public IEnumerable<string[]> ReadReport()
         {
             using SqlDataReader reader = GetReportReader();
