@@ -26,6 +26,7 @@ namespace ConsoleApp
                 WriteLine("8: Insert new infant");
                 WriteLine("9: Change customer name by ID");
                 WriteLine("10: Change flight takeoff date by flight number");
+                WriteLine("11: Get Aircraft flights report");
                 if (int.TryParse(ReadLine(), out input))
                 {
                     switch (input)
@@ -62,6 +63,9 @@ namespace ConsoleApp
                         case 10:
                             ChangeFlightTakeOffDate(dbHandler);
                             break;
+                        case 11:
+                            GetFlightAircraftReport(dbHandler);
+                            break;
                         default:
                             WriteLine("Invalid Input");
                             break;
@@ -76,7 +80,24 @@ namespace ConsoleApp
                 WriteLine();
             }
         }
-
+        private static void GetFlightAircraftReport(DatabaseHandler dbHandler)
+        {
+            try
+            {
+                foreach (string[] item in dbHandler.ReadReport())
+                {
+                    foreach (string value in item)
+                    {
+                        Write($"{value}, ");
+                    }
+                    WriteLine();
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteLine(ex.Message);
+            }
+        }
         private static void ChangeFlightTakeOffDate(DatabaseHandler dbHandler)
         {
             string fnum;

@@ -5,6 +5,8 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Reflection.PortableExecutable;
+using System.Runtime.Intrinsics.X86;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -158,6 +160,23 @@ namespace ConsoleApp
                 yield return values;
             }
         }
+        public SqlDataReader GetReportReader()
+        {
+            return GetReaderFromQuery(reportQuery);
+        }
+        public IEnumerable<string[]> ReadReport()
+        {
+            using SqlDataReader reader = GetReportReader();
+            while (reader.Read())
+            {
+                string[] values = new string[reader.FieldCount];
+                for (int i = 0; i < values.Length; i++)
+                {
+                    values[i] = reader[i].ToString() ?? "";
+                }
+                yield return values;
+            }
+        }
         /// <summary>
         /// Gets flights between two dates
         /// </summary>
@@ -265,5 +284,24 @@ namespace ConsoleApp
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+        const string reportQuery = @"select T.id as AircraftID,Aircraft.ModelName, Aircraft.NoBuisnessSeats, Aircraft.NoEconomySeats,T.TripCount, T.EconomySeats as EconomySeatsBooked,T.BusinessSeats as BusinessSeatsBooked from
+(select y.AircraftID as id, count(*) as TripCount, AVG(y.BusCount) as BusinessSeats, AVG(y.EcoCount) as EconomySeats from
+(select x.fnum as fnum, BusCount, EcoCount, AircraftID from
+(select a.fnum as fnum, BusCount, EcoCount from
+(select Flight.FNum as fnum, Count(*) as BusCount from
+Booking full join Flight on Booking.FNum = Flight.FNum
+where Booking.Class = 'economy'
+group by Flight.FNum) as a
+full join
+(select Flight.FNum as fnum, Count(*) as EcoCount from
+Booking full join Flight on Booking.FNum = Flight.FNum
+where Booking.Class = 'business'
+group by Flight.FNum) as b
+on a.fnum = b.fnum) as x
+full join Flight on x.fnum = Flight.FNum) as y
+full join Aircraft on Aircraft.ID = AircraftID
+group by AircraftID) as T
+full join Aircraft on Aircraft.ID = T.id;
+            ";
     }
 }
